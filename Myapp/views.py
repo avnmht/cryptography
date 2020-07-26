@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from Myapp.models import activusers
 from django.http import Http404
+from django.http import HttpResponse
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -12,8 +13,29 @@ import json
 import uuid
 import hashlib
 # Create your views here.
+def index(request):
+    response=json.dumps([{}])
+    return HttpResponse(response,content_type="text/json")
+def get_pass(request, final):
+    if request.method == 'GET':
+        try:
+            first=final.split("&")
+            activ=activusers.objects.filter(authtoken=first[0])
+            if(len(activ)!=0):
+                passs=first[1]
+                new_pass = passs
+                hashed_password = hash_password(new_pass)
+                response=json.dumps([{'final':hashed_password}])
+            else:
+                response=json.dumps([{"Error" :"Authtoken is invalid"}])
+        except:
+            response=json.dumps([{"Error" :"With the form of request"}])
+    return HttpResponse(response,content_type="text/json")
+
+'''    
 def home(request):
     return render(request,"home.html")
+'''
 def hash_password(password):
     salt = uuid.uuid4().hex
     p=uuid.uuid4().hex
@@ -22,13 +44,15 @@ def hash_password(password):
     for i in range(0,10):
         hashed=hashlib.sha1(hashed.encode()).hexdigest()
     return hashed + ":" + salt
+'''
     
-'''def check_password(hashed_password, user_password):
+def check_password(hashed_password, user_password):
     password, salt = hashed_password.split(':')
-    return password == hashlib.sha1(salt.encode() + user_password.encode()).hexdigest()'''
-@api_view(["POST"])
-def Hasher(request):
+    return password == hashlib.sha1(salt.encode() + user_password.encode()).hexdigest()
+@api_view(["GET"])
+def Hasher(request,final):
     try:
+        print(final)
         final=(request.body).decode()
         first=final.split("&")
         authtoken = ((first[0]).split("="))[1]
@@ -45,3 +69,4 @@ def Hasher(request):
             return JsonResponse("your authtoken is not active",safe=False) 
     except ValueError as e:
         return Response(e.args[0],status.HTTP_400_BAD_REQUEST)
+'''
